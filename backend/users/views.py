@@ -7,7 +7,7 @@ from rest_framework.response import Response
 from api.paginations import PageNumberPagination
 from api.serializers import (
     SubscriptionShowSerializer, FollowSerializer
-    )
+)
 
 from .models import Follow, User
 
