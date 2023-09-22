@@ -1,8 +1,7 @@
 from django.db.models import Sum
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from djoser import utils, views
-from djoser.conf import settings
+from djoser.views import UserViewSet
 from rest_framework import permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -14,11 +13,13 @@ from .download_in_pdf import create_pdf_file
 from .permissions import IsAuthorOrReadOnly, IsAdminOrReadOnly
 from .serializers import (
     CreateRecipeSerializer,
-    CreateResponseSerializer,
     FavoriteSerializer,
+    FollowSerializer,
     IngredientSerializer,
     RecipeSerializer,
     ShoppingCartSerializer,
+    ShortRecipeResponseSerializer,
+    SubscriptionShowSerializer,
     TagSerializer
 )
 from recipes.models import (
@@ -29,20 +30,55 @@ from recipes.models import (
     ShoppingCart,
     Tag
 )
+from users.models import Follow, User
 
 
-class CustomTokenCreateView(views.TokenCreateView):
-    """Вьюсет для получения токена."""
+class FollowViewSet(UserViewSet):
+    """Вьюсет класса Follow."""
 
-    def _action(self, serializer):
-        super()._action(serializer)
-        token = utils.login_user(self.request, serializer.user)
-        # Здесь не уверена, достанется ли serializers из settings
-        token_serializer_class = settings.SERIALIZERS.token
-        return Response(
-            data=token_serializer_class(token).data,
-            status=status.HTTP_201_CREATED
+    pagination_class = LimitPageNumberPagination
+
+    @action(methods=['get'], detail=False)
+    def subscription_list(self, request):
+        recipes_limit = request.query_params.get('recipes_limit')
+        authors = User.objects.filter(following__user=request.user)
+        result_pages = self.paginate_queryset(queryset=authors)
+        serializer = SubscriptionShowSerializer(
+            result_pages,
+            context={
+                'request': request,
+                'recipes_limit': recipes_limit
+            },
+            many=True
         )
+        return self.get_paginated_response(serializer.data)
+
+    @action(methods=['post', 'delete'], detail=True)
+    def subscribe(self, request, id=None):
+        followed_user = get_object_or_404(User, id=id)
+        serializer = FollowSerializer(
+            data={
+                'user': request.user.id,
+                'following': followed_user.id
+            },
+            context={'request': request}
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        if request.method == 'DELETE':
+            subscription = Follow.objects.filter(
+                user=request.user,
+                following=followed_user
+            )
+            if subscription.exists():
+                subscription.delete()
+                return Response(status=status.HTTP_204_NO_CONTENT)
+            return Response(
+                {'errors': 'Вы уже отписались или не были подписаны'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 class TagViewSet(ReadOnlyModelViewSet):
@@ -86,7 +122,7 @@ class RecipeViewSet(ModelViewSet):
         serializer = serializer_req(data=data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        serializer_data = CreateResponseSerializer(recipe)
+        serializer_data = ShortRecipeResponseSerializer(recipe)
         return Response(serializer_data.data, status=status.HTTP_201_CREATED)
 
     @staticmethod

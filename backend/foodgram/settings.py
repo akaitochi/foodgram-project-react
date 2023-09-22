@@ -1,15 +1,18 @@
 import os
 from pathlib import Path
+from environ import Env
 
 from dotenv import load_dotenv
 
 load_dotenv()
 
+env = Env()
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.getenv('SECRET_KEY', default='token')
 
-DEBUG = os.getenv('DEBUG', default=False)
+DEBUG = env.bool('DEBUG', False)
 
 ALLOWED_HOSTS = []
 
@@ -57,13 +60,6 @@ TEMPLATES = [
     },
 ]
 WSGI_APPLICATION = 'foodgram.wsgi.application'
-
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-#     }
-# }
 
 DATABASES = {
     'default': {

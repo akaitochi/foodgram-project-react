@@ -17,8 +17,39 @@ from recipes.models import (
     Tag
 )
 from users.models import Follow, User
-from users.serializers import UserSerializer
-from .validators import ValidateColor
+
+from .validators import ValidateColor, ValidateUsername
+
+
+class UserSerializer(ValidateUsername, ModelSerializer):
+    """Сериализатор для отображения User."""
+
+    is_subscribed = SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = (
+            'email', 'id', 'username', 'first_name',
+            'last_name', 'is_subscribed'
+        )
+
+    def get_is_subscribed(self, obj):
+        request = self.context.get('request')
+        user = self.context.get('request').user
+        if not request or request.user.is_anonymous:
+            return False
+        return object.following.filter(user=user, author=obj).exists()
+
+
+class UserCreateSerializer(ValidateUsername, ModelSerializer):
+    """Сериализатор для создания User."""
+
+    class Meta:
+        model = User
+        fields = (
+            'email', 'id', 'username', 'first_name',
+            'last_name', 'password'
+        )
 
 
 class TagSerializer(ValidateColor, ModelSerializer):
@@ -40,10 +71,10 @@ class IngredientSerializer(ModelSerializer):
         fields = '__all__'
 
 
-class GetIngredientRecipeSerializer(ModelSerializer):
+class GetRecipeIngredientSerializer(ModelSerializer):
     """Сериализатор для модели RecipeIngredient."""
 
-    id = ReadOnlyField(source="ingredient.id")
+    id = ReadOnlyField(source='ingredient.id')
     name = ReadOnlyField(source='ingredient.name')
     measurement_unit = ReadOnlyField(
         source='ingredient.measurement_unit'
@@ -64,7 +95,7 @@ class RecipeSerializer(ModelSerializer):
 
     tags = TagSerializer(many=True, read_only=True)
     author = UserSerializer(read_only=True)
-    ingredients = GetIngredientRecipeSerializer(
+    ingredients = GetRecipeIngredientSerializer(
         source='ingredient_amounts',
         many=True,
         read_only=True
@@ -83,6 +114,7 @@ class RecipeSerializer(ModelSerializer):
 
     def get_is_favorited(self, object):
         request = self.context.get('request')
+        request is None or request.user.is_anonymous
         if request is None or request.user.is_anonymous:
             return False
         return request.user.user_favorite.filter(recipe=object).exists()
@@ -94,7 +126,7 @@ class RecipeSerializer(ModelSerializer):
         return request.user.shopping_cart.filter(recipe=object).exists()
 
 
-class CreateResponseSerializer(ModelSerializer):
+class ShortRecipeResponseSerializer(ModelSerializer):
     """Короткий отображение рецептов при создании подписки."""
 
     class Meta:
@@ -105,9 +137,9 @@ class CreateResponseSerializer(ModelSerializer):
 class FollowListSerializer(UserSerializer):
     """Краткий ответ при успешной подписке."""
 
-    recipes = CreateResponseSerializer(many=True, read_only=True)
+    recipes = ShortRecipeResponseSerializer(many=True, read_only=True)
     recipes_count = SerializerMethodField()
-    is_subscribed = SerializerMethodField(read_only=True)
+    is_subscribed = SerializerMethodField()
 
     class Meta:
         model = User
@@ -118,6 +150,14 @@ class FollowListSerializer(UserSerializer):
 
     def get_recipes_count(self, object):
         return object.recipes.count()
+
+    def get_is_subscribed(self, obj):
+        # Получается, что здесь нужно переопределить метод, чтобы
+        # отобразилась подписка? можно ли просто return True?
+        user = self.context.get('request').user
+        if user.is_authenticated:
+            return object.follower.filter(id=user.id).exists()
+        return False
 
 
 class FollowSerializer(ModelSerializer):
@@ -150,7 +190,7 @@ class FollowSerializer(ModelSerializer):
         ).data
 
 
-class CreateIngredientRecipeSerializer(ModelSerializer):
+class CreateRecipeIngredientSerializer(ModelSerializer):
     """Возвращает краткую информацию о рецепте."""
 
     id = PrimaryKeyRelatedField(queryset=Ingredient.objects.all())
@@ -165,7 +205,7 @@ class CreateRecipeSerializer(ModelSerializer):
 
     image = Base64ImageField(required=False, allow_null=True)
     tags = PrimaryKeyRelatedField(many=True, queryset=Tag.objects.all())
-    ingredients = CreateIngredientRecipeSerializer(many=True)
+    ingredients = CreateRecipeIngredientSerializer(many=True)
 
     def to_representation(self, instance):
         return RecipeSerializer(
@@ -206,7 +246,8 @@ class CreateRecipeSerializer(ModelSerializer):
         author = self.context.get('request').user
         tags_data = validated_data.pop('tags')
         ingredients_data = validated_data.pop('ingredients')
-        recipe = Recipe.objects.create(**validated_data, author=author)
+        recipe = super().create(validated_data)
+        recipe.author = author
         recipe.tags.set(tags_data)
         self.add_ingredients(recipe, ingredients_data)
         return recipe
@@ -215,16 +256,17 @@ class CreateRecipeSerializer(ModelSerializer):
         recipe = instance
         tags = validated_data.pop('tags')
         ingredients = validated_data.pop('ingredients')
-        # Нашла вариант через hasattr, setattr.
-        # Насколько целесообразно использовать его, а не super().update?
-        for key, value in validated_data.items():
-            if hasattr(recipe, key):
-                setattr(recipe, key, value)
-
+        super().update(instance, validated_data)
         instance.tags.clear()
         instance.ingredients.clear()
         instance.tags.set(tags)
-        RecipeIngredient.objects.filter(recipe=recipe).delete()
+        # Здесь я что-то запуталась в related_name
+        # в след.строке я использую related_name из модели RecipeIngredient
+        # но это related_name похоже на другие.
+        # может нужно назвать как-нибудь по-другому?
+        # и точно ли в модели поля recipe и ingredient
+        # должны иметь разные related_name? я запуталась
+        recipe.ingredient.all().delete()
         self.add_ingredients(ingredients, recipe)
         return instance
 
@@ -282,8 +324,12 @@ class SubscriptionShowSerializer(UserSerializer):
 
     def get_recipes(self, object):
         recipes_limit = self.context.get('recipes_limit')
-        author_recipes = object.recipes.all()[:int(recipes_limit)]
-        return CreateResponseSerializer(
+        # Проверка на наличие числа recipes_limit во фронте
+        if not recipes_limit or recipes_limit.isdigit():
+            recipes_limit = 6
+        recipes_limit = int(recipes_limit)
+        author_recipes = object.recipes.all()[:recipes_limit]
+        return ShortRecipeResponseSerializer(
             author_recipes, many=True
         ).data
 

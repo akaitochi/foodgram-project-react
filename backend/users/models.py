@@ -14,7 +14,7 @@ class User(AbstractUser):
     email = models.EmailField(
         verbose_name='Адрес электронной почты',
         max_length=254,
-        unique=True
+        unique=True,
     )
     first_name = models.CharField(
         verbose_name='Имя',
@@ -41,13 +41,15 @@ class Follow(models.Model):
         User,
         on_delete=models.CASCADE,
         related_name='follower',
-        verbose_name='Подписчик')
+        verbose_name='Подписчик',
+        db_index=True)
 
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='following',
-        verbose_name='Автор постов')
+        verbose_name='Автор постов',
+        db_index=True)
 
     class Meta:
         constraints = [

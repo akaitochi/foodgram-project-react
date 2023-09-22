@@ -6,16 +6,19 @@ from django.db import models
 
 from users.models import User
 
+MAX_LENGTH = 200
+
 
 class Ingredient(models.Model):
     """Модель для ингредиентов."""
 
     name = models.CharField(
-        max_length=200,
-        verbose_name='Ингредиент'
+        max_length=MAX_LENGTH,
+        verbose_name='Ингредиент',
+        db_index=True
     )
     measurement_unit = models.CharField(
-        max_length=200,
+        max_length=MAX_LENGTH,
         verbose_name='Единица измерения'
     )
 
@@ -31,11 +34,12 @@ class Tag(models.Model):
     """Модель для тегов."""
 
     name = models.CharField(
-        max_length=200,
-        verbose_name='Название'
+        max_length=MAX_LENGTH,
+        verbose_name='Название',
+        db_index=True
     )
     slug = models.CharField(
-        max_length=200,
+        max_length=MAX_LENGTH,
         verbose_name='Уникальный слаг',
         unique=True,
         validators=[RegexValidator(
@@ -46,6 +50,7 @@ class Tag(models.Model):
     color = models.CharField(
         max_length=7,
         verbose_name='Цвет в HEX',
+        db_index=True
     )
 
     class Meta:
@@ -69,7 +74,8 @@ class Recipe(models.Model):
         User,
         verbose_name='Автор',
         on_delete=models.SET_NULL,
-        related_name='recipes'
+        related_name='recipes',
+        db_index=True
     )
     ingredients = models.ManyToManyField(
         Ingredient,
@@ -78,8 +84,9 @@ class Recipe(models.Model):
         verbose_name='Ингредиенты'
     )
     name = models.CharField(
-        max_length=200,
-        verbose_name='Название'
+        max_length=MAX_LENGTH,
+        verbose_name='Название',
+        db_index=True
     )
     text = models.TextField(
         verbose_name='Описание',
@@ -90,7 +97,7 @@ class Recipe(models.Model):
         upload_to='recipe_images/',
         verbose_name='Ссылка на картинку на сайте'
     )
-    cooking_time = models.PositiveIntegerField(
+    cooking_time = models.PositiveSmallIntegerField(
         default=1,
         validators=[MinValueValidator(
             1,
@@ -155,13 +162,15 @@ class Favorite(models.Model):
         User,
         on_delete=models.CASCADE,
         related_name='user_favorite',
-        verbose_name='Пользователь'
+        verbose_name='Пользователь',
+        db_index=True
     )
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
         related_name='recipe_favorite',
-        verbose_name='Рецепт'
+        verbose_name='Рецепт',
+        db_index=True
     )
 
     class Meta:
@@ -186,13 +195,15 @@ class ShoppingCart(models.Model):
         User,
         on_delete=models.CASCADE,
         verbose_name='Пользователь',
-        related_name='shopping_cart'
+        related_name='shopping_cart',
+        db_index=True
     )
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
         verbose_name='Рецепт',
         related_name='shopping_cart',
+        db_index=True
     )
 
     class Meta:
