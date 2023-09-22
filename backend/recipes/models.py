@@ -75,7 +75,8 @@ class Recipe(models.Model):
         verbose_name='Автор',
         on_delete=models.SET_NULL,
         related_name='recipes',
-        db_index=True
+        db_index=True,
+        null=True
     )
     ingredients = models.ManyToManyField(
         Ingredient,
