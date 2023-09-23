@@ -11,3 +11,4 @@ reportlab==3.6.11
 Pillow==9.0.0
 psycopg2-binary==2.9.3
 python-environ==0.4.54
+flake8-isort==6.0.0

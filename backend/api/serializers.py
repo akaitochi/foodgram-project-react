@@ -1,21 +1,10 @@
-from rest_framework.serializers import (
-    ModelSerializer,
-    PrimaryKeyRelatedField,
-    ReadOnlyField,
-    SerializerMethodField,
-    ValidationError
-)
-from rest_framework.validators import UniqueTogetherValidator
 from drf_extra_fields.fields import Base64ImageField
-
-from recipes.models import (
-    Favorite,
-    Ingredient,
-    RecipeIngredient,
-    Recipe,
-    ShoppingCart,
-    Tag
-)
+from recipes.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
+                            ShoppingCart, Tag)
+from rest_framework.serializers import (ModelSerializer,
+                                        PrimaryKeyRelatedField, ReadOnlyField,
+                                        SerializerMethodField, ValidationError)
+from rest_framework.validators import UniqueTogetherValidator
 from users.models import Follow, User
 
 from .validators import ValidateColor, ValidateUsername

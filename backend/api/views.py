@@ -2,35 +2,23 @@ from django.db.models import Sum
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from djoser.views import UserViewSet
+from recipes.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
+                            ShoppingCart, Tag)
 from rest_framework import permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
+from users.models import Follow, User
 
+from .download_in_pdf import create_pdf_file
 from .filters import IngredientSearchFilter, RecipeFilter
 from .paginations import LimitPageNumberPagination
-from .download_in_pdf import create_pdf_file
-from .permissions import IsAuthorOrReadOnly, IsAdminOrReadOnly
-from .serializers import (
-    CreateRecipeSerializer,
-    FavoriteSerializer,
-    FollowSerializer,
-    IngredientSerializer,
-    RecipeSerializer,
-    ShoppingCartSerializer,
-    ShortRecipeResponseSerializer,
-    SubscriptionShowSerializer,
-    TagSerializer
-)
-from recipes.models import (
-    Favorite,
-    Ingredient,
-    RecipeIngredient,
-    Recipe,
-    ShoppingCart,
-    Tag
-)
-from users.models import Follow, User
+from .permissions import IsAdminOrReadOnly, IsAuthorOrReadOnly
+from .serializers import (CreateRecipeSerializer, FavoriteSerializer,
+                          FollowSerializer, IngredientSerializer,
+                          RecipeSerializer, ShoppingCartSerializer,
+                          ShortRecipeResponseSerializer,
+                          SubscriptionShowSerializer, TagSerializer)
 
 
 class FollowViewSet(UserViewSet):

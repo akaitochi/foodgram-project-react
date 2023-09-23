@@ -1,10 +1,5 @@
-from django.core.validators import (
-    MinValueValidator,
-    RegexValidator
-)
+from django.core.validators import MinValueValidator, RegexValidator
 from django.db import models
-
-
 from foodgram.settings import MAX_LENGTH
 from users.models import User
 
