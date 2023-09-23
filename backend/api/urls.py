@@ -15,8 +15,8 @@ app_name = 'api'
 urlpatterns = [
     path('', include(v1_router.urls)),
     path('', include('djoser.urls')),
-    re_path(r'^auth/token/login/?$',
-            views.TokenCreateView.as_view(),
-            name='login'),
+    # re_path(r'^auth/token/login/?$',
+    #         views.TokenCreateView.as_view(),
+    #         name='login'),
     path('auth/', include('djoser.urls.authtoken')),
 ]
