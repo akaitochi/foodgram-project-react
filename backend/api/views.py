@@ -40,14 +40,12 @@ class FollowViewSet(UserViewSet):
 
     @action(methods=['get'], detail=False)
     def subscription_list(self, request):
-        recipes_limit = request.query_params.get('recipes_limit')
         authors = User.objects.filter(following__user=request.user)
         result_pages = self.paginate_queryset(queryset=authors)
         serializer = SubscriptionShowSerializer(
             result_pages,
             context={
                 'request': request,
-                'recipes_limit': recipes_limit
             },
             many=True
         )

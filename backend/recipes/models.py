@@ -4,9 +4,9 @@ from django.core.validators import (
 )
 from django.db import models
 
-from users.models import User
 
-MAX_LENGTH = 200
+from foodgram.settings import MAX_LENGTH
+from users.models import User
 
 
 class Ingredient(models.Model):

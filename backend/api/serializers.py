@@ -152,11 +152,9 @@ class FollowListSerializer(UserSerializer):
         return object.recipes.count()
 
     def get_is_subscribed(self, obj):
-        # Получается, что здесь нужно переопределить метод, чтобы
-        # отобразилась подписка? можно ли просто return True?
         user = self.context.get('request').user
         if user.is_authenticated:
-            return object.follower.filter(id=user.id).exists()
+            return obj.follower.filter(id=user.id).exists()
         return False
 
 
@@ -260,13 +258,7 @@ class CreateRecipeSerializer(ModelSerializer):
         instance.tags.clear()
         instance.ingredients.clear()
         instance.tags.set(tags)
-        # Здесь я что-то запуталась в related_name
-        # в след.строке я использую related_name из модели RecipeIngredient
-        # но это related_name похоже на другие.
-        # может нужно назвать как-нибудь по-другому?
-        # и точно ли в модели поля recipe и ingredient
-        # должны иметь разные related_name? я запуталась
-        recipe.ingredient.all().delete()
+        instance.ingredient.all().delete()
         self.add_ingredients(ingredients, recipe)
         return instance
 
@@ -324,10 +316,8 @@ class SubscriptionShowSerializer(UserSerializer):
 
     def get_recipes(self, object):
         recipes_limit = self.context.get('recipes_limit')
-        # Проверка на наличие числа recipes_limit во фронте
-        if not recipes_limit or recipes_limit.isdigit():
-            recipes_limit = 6
-        recipes_limit = int(recipes_limit)
+        if recipes_limit:
+            recipes_limit = int(recipes_limit)
         author_recipes = object.recipes.all()[:recipes_limit]
         return ShortRecipeResponseSerializer(
             author_recipes, many=True

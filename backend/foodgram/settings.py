@@ -136,3 +136,6 @@ DJOSER = {
         'current_user': 'api.serializers.UserSerializer',
     }
 }
+
+
+MAX_LENGTH = 200
