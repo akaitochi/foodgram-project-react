@@ -21,17 +21,29 @@ class UserSerializer(ValidateUsername, ModelSerializer):
             'email', 'id', 'username', 'first_name',
             'last_name', 'is_subscribed'
         )
+        extra_kwargs = {'password': {'write_only': True}}
 
     def get_is_subscribed(self, obj):
         request = self.context.get('request')
         user = self.context.get('request').user
         if not request or request.user.is_anonymous:
             return False
-        return object.following.filter(user=user, author=obj).exists()
+        return obj.following.filter(user=user, author=obj).exists()
 
 
 class UserCreateSerializer(ValidateUsername, ModelSerializer):
     """Сериализатор для создания User."""
+
+    def create(self, validated_data):
+        user = User(
+            email=validated_data['email'],
+            username=validated_data['username'],
+            first_name=validated_data['first_name'],
+            last_name=validated_data['last_name'],
+        )
+        user.set_password(validated_data["password"])
+        user.save()
+        return user
 
     class Meta:
         model = User
