@@ -12,8 +12,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # env.read_env(os.path.join(BASE_DIR, '.env'))
 
-# DEBUG = env.bool('DEBUG', default=False)
-DEBUG = True
+DEBUG = env.bool('DEBUG', default=False)
 
 SECRET_KEY = os.getenv('SECRET_KEY', default='token')
 # SECRET_KEY = env.str('SECRET_KEY', default=('' if not DEBUG else 'token'))
