@@ -13,7 +13,7 @@ from users.models import Follow, User
 from .download_in_pdf import create_pdf_file
 from .filters import IngredientSearchFilter, RecipeFilter
 from .paginations import LimitPageNumberPagination
-from .permissions import IsAdminOrReadOnly, IsAuthorOrReadOnly
+from .permissions import IsAuthorStaffOrReadOnly
 from .serializers import (CreateRecipeSerializer, FavoriteSerializer,
                           FollowSerializer, IngredientSerializer,
                           RecipeSerializer, ShoppingCartSerializer,
@@ -90,7 +90,7 @@ class RecipeViewSet(ModelViewSet):
 
     queryset = Recipe.objects.select_related('author')
     permission_classes = (
-        IsAdminOrReadOnly, IsAuthorOrReadOnly
+        IsAuthorStaffOrReadOnly,
     )
     pagination_class = LimitPageNumberPagination
     filterset_class = RecipeFilter
