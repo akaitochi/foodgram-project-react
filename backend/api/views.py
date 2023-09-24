@@ -89,10 +89,10 @@ class RecipeViewSet(ModelViewSet):
     """Вьюсет класса Recipe."""
 
     queryset = Recipe.objects.select_related('author')
-    permission_classes = [IsAuthorStaffOrReadOnly, ]
+    permission_classes = (IsAuthorStaffOrReadOnly,)
     pagination_class = LimitPageNumberPagination
     filterset_class = RecipeFilter
-    filter_backends = [DjangoFilterBackend, ]
+    filter_backends = (DjangoFilterBackend,)
 
     def get_serializer_class(self):
         if self.request.method in permissions.SAFE_METHODS:
