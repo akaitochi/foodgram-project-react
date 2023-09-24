@@ -25,6 +25,5 @@ class Command(BaseCommand):
                 Ingredient.objects.bulk_create(ingredients)
             print('finished')
         except FileNotFoundError:
-
             print(f'Файл {file_name} не найден.')
             return
