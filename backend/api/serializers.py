@@ -22,6 +22,7 @@ class UserSerializer(ValidateUsername, ModelSerializer):
             'last_name', 'is_subscribed'
         )
         extra_kwargs = {'password': {'write_only': True}}
+        read_only_fields = ('is_subscribed',)
 
     def get_is_subscribed(self, obj):
         request = self.context.get('request')
@@ -62,6 +63,7 @@ class TagSerializer(ValidateColor, ModelSerializer):
             'id', 'name',
             'color', 'slug'
         )
+        read_only_fields = ('__all__',)
 
 
 class IngredientSerializer(ModelSerializer):
@@ -70,6 +72,7 @@ class IngredientSerializer(ModelSerializer):
     class Meta:
         model = Ingredient
         fields = '__all__'
+        read_only_fields = ('__all__',)
 
 
 class GetRecipeIngredientSerializer(ModelSerializer):
@@ -133,6 +136,7 @@ class ShortRecipeResponseSerializer(ModelSerializer):
     class Meta:
         model = Recipe
         fields = ('id', 'name', 'image', 'cooking_time')
+        read_only_fields = ('__all__',)
 
 
 class FollowListSerializer(UserSerializer):
@@ -148,6 +152,7 @@ class FollowListSerializer(UserSerializer):
             'email', 'id', 'username', 'first_name', 'last_name',
             'is_subscribed', 'recipes', 'recipes_count'
         )
+        read_only_fields = ('__all__',)
 
     def get_recipes_count(self, object):
         return object.recipes.count()
@@ -173,6 +178,7 @@ class FollowSerializer(ModelSerializer):
     class Meta:
         model = Follow
         fields = ('user', 'author')
+        read_only_fields = ('__all__',)
 
         validators = [
             UniqueTogetherValidator(
@@ -197,11 +203,13 @@ class CreateRecipeIngredientSerializer(ModelSerializer):
     class Meta:
         model = RecipeIngredient
         fields = ('id', 'amount')
+        read_only_fields = ('__all__',)
 
 
 class CreateRecipeSerializer(ModelSerializer):
     """Сериализатор для безопасного доступа к модели Recipe."""
 
+    author = UserSerializer(read_only=True)
     image = Base64ImageField(required=False, allow_null=True)
     tags = PrimaryKeyRelatedField(many=True, queryset=Tag.objects.all())
     ingredients = CreateRecipeIngredientSerializer(many=True)
@@ -242,11 +250,16 @@ class CreateRecipeSerializer(ModelSerializer):
         ])
 
     def create(self, validated_data):
+        image = validated_data.pop('image')
         author = self.context.get('request').user
         tags_data = validated_data.pop('tags')
         ingredients_data = validated_data.pop('ingredients')
-        recipe = super().create(validated_data)
-        recipe.author = author
+        # Вернула как было, иначе не работало :(
+        recipe = Recipe.objects.create(
+            author=author,
+            image=image,
+            **validated_data
+        )
         recipe.tags.set(tags_data)
         self.add_ingredients(recipe, ingredients_data)
         return recipe
@@ -255,21 +268,21 @@ class CreateRecipeSerializer(ModelSerializer):
         recipe = instance
         tags = validated_data.pop('tags')
         ingredients = validated_data.pop('ingredients')
-        super().update(instance, validated_data)
         instance.tags.clear()
-        instance.ingredients.clear()
         instance.tags.set(tags)
         instance.ingredient.all().delete()
         self.add_ingredients(ingredients, recipe)
-        return instance
+        return super().update(recipe, validated_data)
 
     class Meta:
         model = Recipe
         fields = (
+            'id', 'author',
             'ingredients', 'tags',
             'image', 'name',
             'text', 'cooking_time'
         )
+        read_only_fields = ('__all__',)
 
 
 class FavoriteSerializer(ModelSerializer):
@@ -278,6 +291,7 @@ class FavoriteSerializer(ModelSerializer):
     class Meta:
         model = Favorite
         fields = '__all__'
+        read_only_fields = ('__all__',)
         validators = [
             UniqueTogetherValidator(
                 queryset=Favorite.objects.all(),
@@ -293,6 +307,7 @@ class ShoppingCartSerializer(ModelSerializer):
     class Meta:
         model = ShoppingCart
         fields = '__all__'
+        read_only_fields = ('__all__',)
         validators = [
             UniqueTogetherValidator(
                 queryset=ShoppingCart.objects.all(),
@@ -314,6 +329,7 @@ class SubscriptionShowSerializer(UserSerializer):
             'last_name', 'is_subscribed',
             'recipes', 'recipes_count'
         )
+        read_only_fields = ('__all__',)
 
     def get_recipes(self, object):
         recipes_limit = self.context.get('recipes_limit')
