@@ -10,16 +10,12 @@ env = Env()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# env.read_env(os.path.join(BASE_DIR, '.env'))
 
 DEBUG = env.bool('DEBUG', default=False)
 
 SECRET_KEY = os.getenv('SECRET_KEY', default='token')
-# SECRET_KEY = env.str('SECRET_KEY', default=('' if not DEBUG else 'token'))
 
-# ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', default='127.0.0.1')
-ALLOWED_HOSTS = ['158.160.17.230', 'localhost', '127.0.0.1', 'foodymoody.ddns.net']
-# ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=[])
+ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=[])
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -112,6 +108,7 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 DATA_FILES_DIR = os.path.join(BASE_DIR, 'data')
+FONTS_FILES_DIR = os.path.join(DATA_FILES_DIR, 'HelveticaRegular.ttf')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 

@@ -27,43 +27,49 @@ class FollowViewSet(UserViewSet):
     pagination_class = LimitPageNumberPagination
 
     @action(methods=['get'], detail=False)
-    def subscription_list(self, request):
+    def subscriptions(self, request):
         authors = User.objects.filter(following__user=request.user)
         result_pages = self.paginate_queryset(queryset=authors)
+        # Вернула чтение recipes_limit,
+        # потому что иначе много рецептов показывает
+        recipes_limit = request.query_params['recipes_limit']
         serializer = SubscriptionShowSerializer(
             result_pages,
             context={
                 'request': request,
+                'recipes_limit': recipes_limit
             },
             many=True
         )
         return self.get_paginated_response(serializer.data)
 
     @action(methods=['post', 'delete'], detail=True)
-    def subscribe(self, request, id=None):
-        followed_user = get_object_or_404(User, id=id)
+    def subscribe(self, request, id):
+        """Добавляет или удаляет из подписок."""
+        if request.method == 'DELETE':
+            subscription = Follow.objects.filter(
+                user=request.user,
+                author=get_object_or_404(User, id=id)
+            )
+            if subscription.exists():
+                subscription.delete()
+                return Response(
+                    {'errors': 'Вы отписались.'},
+                    status=status.HTTP_204_NO_CONTENT
+                )
+            return Response(
+                {'errors': 'Вы уже отписались или не были подписаны'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
         serializer = FollowSerializer(
             data={
                 'user': request.user.id,
-                'following': followed_user.id
+                'author': get_object_or_404(User, id=id).id
             },
             context={'request': request}
         )
         serializer.is_valid(raise_exception=True)
         serializer.save()
-
-        if request.method == 'DELETE':
-            subscription = Follow.objects.filter(
-                user=request.user,
-                following=followed_user
-            )
-            if subscription.exists():
-                subscription.delete()
-                return Response(status=status.HTTP_204_NO_CONTENT)
-            return Response(
-                {'errors': 'Вы уже отписались или не были подписаны'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
@@ -150,7 +156,6 @@ class RecipeViewSet(ModelViewSet):
         permission_classes=(permissions.IsAuthenticated,)
     )
     def download_shopping_cart(self, request):
-        total_ingredient_amount = Sum('amount')
         shopping_cart = (
             RecipeIngredient.objects.filter(
                 recipe__shopping_cart__user=request.user
@@ -159,6 +164,6 @@ class RecipeViewSet(ModelViewSet):
                 'ingredient__measurement_unit',
             ).order_by(
                 'ingredient__name'
-            ).annotate(total_ingredient_amount)
+            ).annotate(total_ingredient_amount=Sum('amount'))
         )
         return create_pdf_file(shopping_cart)

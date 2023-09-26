@@ -1,12 +1,19 @@
 import io
 
 from django.http import FileResponse
+from foodgram.settings import FONTS_FILES_DIR
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.units import cm
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas
 
 
 def create_pdf_file(request):
+    # Устанавливаем шрифты
+    pdfmetrics.registerFont(
+        TTFont('Helvetica', FONTS_FILES_DIR, 'UTF-8')
+    )
     # Создаём буфер
     buf = io.BytesIO()
     # Создаём канвас
