@@ -193,3 +193,5 @@
 ## Автор
     Савина Александра
     https://github.com/akaitochi
+    Логин от админки: admin
+    Пароль от админки: adminpassword
