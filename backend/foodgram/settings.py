@@ -11,7 +11,8 @@ env = Env()
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
-DEBUG = env.bool('DEBUG', default=False)
+# DEBUG = env.bool('DEBUG', default=False)
+DEBUG = True
 
 SECRET_KEY = os.getenv('SECRET_KEY', default='token')
 
