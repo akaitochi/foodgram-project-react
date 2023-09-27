@@ -235,7 +235,7 @@ class CreateRecipeSerializer(ModelSerializer):
                 'Ингредиенты рецепта не должны повторятся.'
             )
         for ingredient in ingredients:
-            if ingredient.get('amount') <= 0:
+            if ingredient.get('amount') < 1:
                 raise ValidationError(
                     'Количество ингредиентов должно быть больше 0!'
                 )
