@@ -234,6 +234,11 @@ class CreateRecipeSerializer(ModelSerializer):
             raise ValidationError(
                 'Ингредиенты рецепта не должны повторятся.'
             )
+        for ingredient in ingredients:
+            if ingredient.get('amount') <= 0:
+                raise ValidationError(
+                    'Количество ингредиентов должно быть больше 0!'
+                )
         return ingredients
 
     def validate_tags(self, tags):
