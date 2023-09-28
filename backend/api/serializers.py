@@ -226,9 +226,11 @@ class CreateRecipeSerializer(ModelSerializer):
             }
         ).data
 
-    def validate_ingredients(self, ingredients):
+    def validate(self, data):
+        tags_data = data.get('tags')
+        ingredients = data.get('ingredients')
         ingredients_data = [
-            ingredient.get('id') for ingredient in ingredients
+            ingredient.get('id') for ingredient in data.get('ingredients')
         ]
         if len(ingredients_data) != len(set(ingredients_data)):
             raise ValidationError(
@@ -239,14 +241,11 @@ class CreateRecipeSerializer(ModelSerializer):
                 raise ValidationError(
                     'Количество ингредиентов должно быть больше 0!'
                 )
-        return ingredients
-
-    def validate_tags(self, tags):
-        if len(tags) != len(set(tags)):
+        if len(tags_data) != len(set(tags_data)):
             raise ValidationError(
                 'Теги рецепта не должны повторятся.'
             )
-        return tags
+        return data
 
     def add_ingredients(self, recipe, ingredients_data):
         RecipeIngredient.objects.bulk_create(
